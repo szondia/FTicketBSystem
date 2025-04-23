@@ -5,11 +5,10 @@ class Jarat(ABC):
         self.jaratszam = jaratszam
         self.celallomas = celallomas
         self.jegyar = jegyar
-        self.elerheto = True  # A járat foglalható-e
 
     @abstractmethod
     def get_jegy_ara(self):
         """
-        Visszaadja a jegy árát, típusonként módosítva.
+        Visszaadja a jegy árát, módosítja az alapjegyárat a járattípus szerint.
         """
         pass
