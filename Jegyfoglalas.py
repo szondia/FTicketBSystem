@@ -1,33 +1,35 @@
 class JegyFoglalas:
     def __init__(self):
-        # foglalasok: jaratszam -> list of utas_nevek
+        # foglalasok: id -> (jaratszam, utas)
         self.foglalasok = {}
+        self.next_id = 1
 
     def foglal(self, jaratszam, jarat, utas):
         """
-        Hozzáad egy foglalást az adott járatra.
-        Visszaadja a jegy árát.
+        Létrehoz egy új foglalást, visszaadja (foglalas_id, ar).
         """
-        self.foglalasok.setdefault(jaratszam, []).append(utas)
-        return jarat.get_jegy_ara()
+        fid = f"BKG{self.next_id:03d}"
+        self.next_id += 1
+        self.foglalasok[fid] = (jaratszam, utas)
+        return fid, jarat.get_jegy_ara()
 
-    def lemond(self, jaratszam, utas):
+    def lemond_by_id(self, fid):
         """
-        Lemond egy meglévő foglalást.
-        Visszaad True ha sikerült, False ha nincs ilyen foglalás.
+        Lemond foglalást azonosító alapján.
         """
-        utasok = self.foglalasok.get(jaratszam, [])
-        if utas in utasok:
-            utasok.remove(utas)
+        if fid in self.foglalasok:
+            del self.foglalasok[fid]
             return True
         return False
 
+    def lemond_by_name(self, nev):
+        """
+        Visszaadja a nevhez tartozó foglalások listáját: [(id, jaratszam)].
+        """
+        return [(fid, jsz) for fid, (jsz, u) in self.foglalasok.items() if u == nev]
+
     def listaz(self):
         """
-        Visszaadja az összes foglalást [(jaratszam, utas), ...] formában.
+        Visszaadja az összes foglalást: [(id, jaratszam, utas)].
         """
-        eredmeny = []
-        for jsz, utasok in self.foglalasok.items():
-            for u in utasok:
-                eredmeny.append((jsz, u))
-        return eredmeny
+        return [(fid, jsz, u) for fid, (jsz, u) in self.foglalasok.items()]
