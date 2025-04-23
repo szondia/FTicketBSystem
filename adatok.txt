@@ -1,0 +1,3 @@
+nev: [Szondi Ákos]
+szak: [Mérnőkinformatikus - BSC]
+Neptun: [VD85Z8]
