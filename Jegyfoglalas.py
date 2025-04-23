@@ -3,32 +3,31 @@ class JegyFoglalas:
         # foglalasok: jaratszam -> list of utas_nevek
         self.foglalasok = {}
 
-    def foglal(self, jaratszam, jarat, felhasznalo):
+    def foglal(self, jaratszam, jarat, utas):
         """
-        Foglal egy járatra; ha sikeres, visszaadja az árat és None hibaüzenetet.
-        Ha már foglalt, visszaad None-t és hibaszöveget.
+        Hozzáad egy foglalást az adott járatra.
+        Visszaadja a jegy árát.
         """
-        if not jarat.elerheto:
-            return None, "Ez a járat már foglalt."
-        self.foglalasok.setdefault(jaratszam, []).append(felhasznalo)
-        jarat.elerheto = False
-        return jarat.get_jegy_ara(), None
+        self.foglalasok.setdefault(jaratszam, []).append(utas)
+        return jarat.get_jegy_ara()
 
-    def lemond(self, jaratszam, felhasznalo, jarat):
+    def lemond(self, jaratszam, utas):
         """
-        Lemond egy korábbi foglalást; siker esetén (True, None), egyébként (False, hibaüzenet).
+        Lemond egy meglévő foglalást.
+        Visszaad True ha sikerült, False ha nincs ilyen foglalás.
         """
         utasok = self.foglalasok.get(jaratszam, [])
-        if felhasznalo in utasok:
-            utasok.remove(felhasznalo)
-            jarat.elerheto = True
-            return True, None
-        return False, "Nincs ilyen foglalás."
+        if utas in utasok:
+            utasok.remove(utas)
+            return True
+        return False
 
     def listaz(self):
-        """Visszaadja az összes aktuális foglalást listaként."""
-        lines = []
+        """
+        Visszaadja az összes foglalást [(jaratszam, utas), ...] formában.
+        """
+        eredmeny = []
         for jsz, utasok in self.foglalasok.items():
             for u in utasok:
-                lines.append(f"Járat {jsz}: {u}")
-        return lines
+                eredmeny.append((jsz, u))
+        return eredmeny
