@@ -5,6 +5,12 @@ from Jegyfoglalas import JegyFoglalas
 from Formatter import Formatter
 
 def main():
+    # Induláskor jelzés a formatter használatról
+    if Formatter.HAS_TABULATE:
+        print("[INFO] A 'tabulate' modul telepítve van - táblázatos megjelenítés aktív.")
+    else:
+        print("[INFO] Egyszerű felsorolás használata, javasolt telepíteni a 'tabulate' modult.")
+
     tarsasag = LegiTarsasag("GDE Airlines")
     # Előre betöltött járatok
     tarsasag.hozzaad_jarat(BelfoldiJarat("B100", "Budapest", 15000))
