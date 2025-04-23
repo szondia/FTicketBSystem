@@ -9,6 +9,6 @@ class Jarat(ABC):
     @abstractmethod
     def get_jegy_ara(self):
         """
-        Visszaadja a jegy árát, módosítja az alapjegyárat a járattípus szerint.
+        Visszaadja a jegy árát járattípus szerint módosítva.
         """
         pass
