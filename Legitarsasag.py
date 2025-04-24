@@ -1,16 +1,19 @@
+from datetime import date
+
 class LegiTarsasag:
-    def __init__(self, nev):
-        self.nev = nev
-        self.jaratok = []
+    def __init__(self, code: str, name: str):
+        self.code = code
+        self.name = name
+        self.flights = []
 
-    def hozzaad_jarat(self, jarat):
-        self.jaratok.append(jarat)
+    def add_flight(self, jarat):
+        self.flights.append(jarat)
 
-    def get_elerheto_jaratok(self):
-        return self.jaratok
+    def available_flights(self, travel_date: date):
+        # flights are daily recurring
+        if travel_date < date.today():
+            return []
+        return self.flights
 
-    def find_jarat(self, jaratszam):
-        for j in self.jaratok:
-            if j.jaratszam == jaratszam:
-                return j
-        return None
+    def find_flight(self, flight_number: str):
+        return next((f for f in self.flights if f.jaratszam == flight_number), None)
