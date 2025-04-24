@@ -1,41 +1,35 @@
 try:
     from tabulate import tabulate
-    _HAS_TABULATE = True
+    HAS_TABULATE = True
 except ImportError:
-    _HAS_TABULATE = False
+    HAS_TABULATE = False
 
 class Formatter:
-    """
-    Formázó osztály a foglalások és járatok megjelenítéséhez.
-    Ha telepítve van a tabulate, táblázatként jeleníti meg az adatokat.
-    Egyébként egyszerű felsorolás + figyelmeztetés.
-    """
-    HAS_TABULATE = _HAS_TABULATE
+    @staticmethod
+    def format_jaratok(jaratok):
+        # limit up to 6 flights
+        display = jaratok[:6]
+        if HAS_TABULATE:
+            rows = [[j.jaratszam, j.origin, j.destination,
+                     f"{j.get_jegy_ara():.0f} Ft", j.departure_time.strftime('%H:%M')]
+                    for j in display]
+            return tabulate(rows, headers=["Járatszám","Honnan","Hova","Ár","Idő"])
+        else:
+            lines = [f"{j.jaratszam}: {j.origin} -> {j.destination} | Ár: {j.get_jegy_ara():.0f} Ft | Idő: {j.departure_time.strftime('%H:%M')}"
+                     for j in display]
+            return "\n".join(lines) + "\n!!!! Az adatok táblázatosan áttekinthetőbbek a 'tabulate' modullal, kérjük telepitse (pip install tabulate). !!!!"
 
     @staticmethod
     def format_foglalasok(foglalasok):
-        # foglalasok: lista tuple (id, jaratszam, utas)
-        if Formatter.HAS_TABULATE:
-            rows = [[fid, jsz, u] for fid, jsz, u in foglalasok]
-            return tabulate(rows, headers=["ID", "Járatszám", "Utas"])
+        if HAS_TABULATE:
+            rows = [[fid, info['airline'], info['flight_number'],
+                     info['origin'], info['destination'],
+                     info['passenger'], info['travel_date'].isoformat(), info['departure_time'].strftime('%H:%M')]
+                    for fid, info in foglalasok.items()]
+            return tabulate(rows, headers=["ID","Légitársaság","Járat","Honnan","Hova","Utas","Dátum","Idő"])
         else:
-            lines = [f"ID: {fid}, Járat: {jsz}, Utas: {u}" for fid, jsz, u in foglalasok]
-            warning = (
-                "Az adatok megjelenítése a tabulate osztály telepítésével áttekinthetőbb lenne. "
-                "Kérjük telepítse!"
-            )
-            return "\n" + "\n".join(lines) + "\n" + warning
-
-    @staticmethod
-    def format_jaratok(jaratok):
-        # jaratok: lista Jarat objektumok
-        if Formatter.HAS_TABULATE:
-            rows = [[j.jaratszam, j.celallomas, f"{j.get_jegy_ara():.0f} Ft"] for j in jaratok]
-            return tabulate(rows, headers=["Járatszám", "Célállomás", "Ár"])
-        else:
-            lines = [f"{j.jaratszam}: {j.celallomas}, Ár: {j.get_jegy_ara():.0f} Ft" for j in jaratok]
-            warning = (
-                "Az adatok megjelenítése a tabulate osztály telepítésével áttekinthetőbb lenne. "
-                "Kérjük telepítse!"
-            )
-            return "\n" + "\n".join(lines) + "\n" + warning
+            lines = [
+                f"{fid}: {info['airline']} {info['flight_number']} {info['origin']}->{info['destination']} | Utas: {info['passenger']} | {info['travel_date']} {info['departure_time'].strftime('%H:%M')}"
+                for fid, info in foglalasok.items()
+            ]
+            return "\n".join(lines) + "\n!!!! Az adatok táblázatosan áttekinthetőbbek a 'tabulate' modullal, kérjük telepitse (pip install tabulate). !!!!"
