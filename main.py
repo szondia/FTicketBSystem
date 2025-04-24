@@ -1,3 +1,4 @@
+from datetime import date, time, timedelta
 from Legitarsasag import LegiTarsasag
 from BelfoldiJarat import BelfoldiJarat
 from NemzetkoziJarat import NemzetkoziJarat
@@ -5,94 +6,136 @@ from Jegyfoglalas import JegyFoglalas
 from Formatter import Formatter
 
 def main():
-    # Induláskor jelzés a formatter használatról
-    if Formatter.HAS_TABULATE:
-        print("[INFO] A 'tabulate' modul telepítve van - táblázatos megjelenítés aktív.")
-    else:
-        print("[INFO] Egyszerű felsorolás használata, javasolt telepíteni a 'tabulate' modult.")
+    codes = [
+        ('GDE', 'GDE Airlines'),
+        ('WZZ', 'Wizz Air'),
+        ('LH', 'Lufthansa'),
+        ('BA', 'British Airways'),
+        ('AF', 'Air France'),
+        ('KL', 'KLM'),
+        ('TK', 'Turkish Airlines'),
+        ('EK', 'Emirates'),
+        ('QR', 'Qatar Airways'),
+        ('FR', 'Ryanair')
+    ]
+    airlines = {code: LegiTarsasag(code, name) for code, name in codes}
 
-    tarsasag = LegiTarsasag("GDE Airlines")
-    # Előre betöltött járatok
-    tarsasag.hozzaad_jarat(BelfoldiJarat("B100", "Budapest", 15000))
-    tarsasag.hozzaad_jarat(BelfoldiJarat("B200", "Debrecen", 12000))
-    tarsasag.hozzaad_jarat(NemzetkoziJarat("N300", "London", 30000))
-    tarsasag.hozzaad_jarat(NemzetkoziJarat("N400", "Jalta", 50000))
+    belfoldi_cities = ['Debrecen', 'Szeged', 'Pécs', 'Győr']
+    international_cities = ['London', 'Paris', 'New York', 'Jalta', 'Sydney', 'Dubai', 'Tokyo']
+    today = date.today()
 
-    foglalas_mgr = JegyFoglalas()
-    # Előre foglalások
-    foglalas_mgr.foglal("B100", tarsasag.find_jarat("B100"), "Szent Borbála")
-    foglalas_mgr.foglal("N400", tarsasag.find_jarat("N400"), "Иосиф Виссарионович Сталин")
-    foglalas_mgr.foglal("N400", tarsasag.find_jarat("N400"), "Sir Winston Leonard Spencer-Churchill")
-    foglalas_mgr.foglal("N400", tarsasag.find_jarat("N400"), "Franklin Delano Roosevelt")
-    foglalas_mgr.foglal("N300", tarsasag.find_jarat("N300"), "Ikarosz")
-    foglalas_mgr.foglal("B200", tarsasag.find_jarat("B200"), "Jesus Christ")
+    # Dinamikus járatok generálása
+    for i, (code, _) in enumerate(codes):
+        dep_date = today + timedelta(days=i+1)
+        dep_time = time(hour=8 + i % 12, minute=(i * 5) % 60)
+        jaratszam = f"{code}{100+i}"
+        if code in ['GDE', 'WZZ']:
+            destination = belfoldi_cities[i % len(belfoldi_cities)]
+            price = 8000 + i * 2000
+            jarat = BelfoldiJarat(jaratszam, 'Budaörs', destination, price, dep_date, dep_time)
+        else:
+            destination = international_cities[i % len(international_cities)]
+            price = 30000 + i * 5000
+            jarat = NemzetkoziJarat(jaratszam, 'Budapest', destination, price, dep_date, dep_time)
+        airlines[code].add_flight(jarat)
+
+    presets = [
+        ('GDE', 'GDE100', 'Szent Borbála', 1),
+        ('BA', 'BA103', 'Иосиф Виссарионович Сталин', 7),
+        ('BA', 'BA103', 'Sir Winston Leonard Spencer-Churchill', 7),
+        ('BA', 'BA103', 'Franklin Delano Roosevelt', 7),
+        ('AF', 'AF104', 'Ikarosz', 3),
+        ('GDE', 'GDE100', 'Jesus Christ', 2)
+    ]
+    fog_mgr = JegyFoglalas()
+    for code, flight_num, utas, offset in presets:
+        al = airlines.get(code)
+        flight = al.find_flight(flight_num) if al else None
+        td_preset = today + timedelta(days=offset)
+        if flight:
+            fog_mgr.book(al.name, flight, td_preset, utas)
 
     while True:
-        print("\n--- GDE Airlines Rendszer ---")
+        print("\n--- Foglalási Rendszer ---")
         print("1. Jegy foglalása")
         print("2. Foglalás lemondása")
         print("3. Foglalások listázása")
         print("4. Kilépés")
-        choice = input("Válasszon menüpontot (1-4): ").strip()
+        ch = input("Válasszon (1-4): ").strip()
 
-        if choice == '1':
-            print("\nElérhető járatok:")
-            print(Formatter.format_jaratok(tarsasag.get_elerheto_jaratok()))
-            jsz = input("Járatszám: ").strip()
-            jarat = tarsasag.find_jarat(jsz)
-            if not jarat:
-                print("[HIBA] Érvénytelen járatszám.")
+        if ch == '1':
+            try:
+                y = int(input("Év (YYYY): "))
+                m = int(input("Hó (MM): "))
+                d = int(input("Nap (DD): "))
+                td = date(y, m, d)
+            except ValueError:
+                print("[HIBA] Érvénytelen dátum.")
                 continue
-            nev = input("Utas neve: ").strip()
-            fid, ar = foglalas_mgr.foglal(jsz, jarat, nev)
-            print(f"Foglalás sikeres! Azonosító: {fid}, Jegy ára: {ar:.0f} Ft")
+            if td < today:
+                print("[HIBA] A megadott dátum a múltban van és az időutazás szolgáltatásunk jelenleg fejlesztés alatt van. Kérem adjon meg jövőbeni időpontot.")
+                continue
 
-        elif choice == '2':
-            print("\nLemondási mód:")
-            print(" 1. Foglalási azonosító alapján")
-            print(" 2. Név alapján")
-            mode = input("Válasszon (1-2): ").strip()
-            if mode == '1':
-                fid = input("Foglalási azonosító: ").strip()
-                if foglalas_mgr.lemond_by_id(fid):
-                    print("Lemondás sikeres.")
-                else:
-                    print("[HIBA] Nem található ilyen azonosító.")
-            elif mode == '2':
-                nev = input("Utas neve: ").strip()
-                lista = foglalas_mgr.lemond_by_name(nev)
-                if not lista:
-                    print("[HIBA] Nincs ilyen névhez foglalás.")
-                elif len(lista) == 1:
-                    fid, _ = lista[0]
-                    foglalas_mgr.lemond_by_id(fid)
-                    print(f"Lemondás sikeres (ID: {fid}).")
-                else:
-                    print("Több foglalás található, válasszon:")
-                    for fid, jsz in lista:
-                        print(f" - {fid}, Járat: {jsz}")
-                    fid = input("Foglalási azonosító: ").strip()
-                    if foglalas_mgr.lemond_by_id(fid):
-                        print("Lemondás sikeres.")
-                    else:
-                        print("[HIBA] Nem található ilyen azonosító.")
+            # Összes járat szűrése: origin != destination
+            all_flights = []
+            for al in airlines.values():
+                for f in al.available_flights(td):
+                    if f.origin != f.destination:
+                        all_flights.append((al.name, f))
+            if not all_flights:
+                print("[HIBA] Nincsenek elérhető járatok erre a dátumra.")
+                continue
+
+            # limit max 6
+            print("\nElérhető járatok:")
+            display = all_flights[:6]
+            # Csoportosítva légitársaságonként
+            grouped = {}
+            for name, f in display:
+                grouped.setdefault(name, []).append(f)
+            for name, fls in grouped.items():
+                print(f"\n{name}:")
+                print(Formatter.format_jaratok(fls))
+
+            fn = input("Járatszám: ").strip()
+            sel = next(((n, f) for n, f in all_flights if f.jaratszam == fn), None)
+            if not sel:
+                print("[HIBA] Nincs ilyen járat.")
+                continue
+
+            utas = input("Utas neve: ").strip()
+            bid, price, err = fog_mgr.book(sel[0], sel[1], td, utas)
+            if err:
+                print(f"[HIBA] {err}")
             else:
-                print("[HIBA] Érvénytelen választás.")
+                print(f"Foglalás sikeres! {sel[0]} {fn}, ID: {bid}, Ár: {price:.0f} Ft")
 
-        elif choice == '3':
-            foglalasok = foglalas_mgr.listaz()
-            if not foglalasok:
-                print("Nincs aktív foglalás.")
+        elif ch == '2':
+            bid = input("Foglalási ID: ").strip()
+            ok, err = fog_mgr.cancel(bid)
+            if err:
+                print(f"[HIBA] {err}")
             else:
-                print("\nAktuális foglalások:")
-                print(Formatter.format_foglalasok(foglalasok))
+                print("Lemondás sikeres.")
 
-        elif choice == '4':
+        elif ch == '3':
+            bookings = fog_mgr.list_bookings()
+            if not bookings:
+                print("Nincsenek foglalások.")
+            else:
+                print(Formatter.format_foglalasok(bookings))
+
+
+        elif ch == '4':
+
             print("Kilépés...")
+
             break
 
         else:
-            print("[HIBA] Érvénytelen választás. Próbáld újra.")
+
+            print("[HIBA] Érvénytelen választás.")
+
 
 if __name__ == '__main__':
     main()
